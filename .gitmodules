@@ -1,0 +1,3 @@
+[submodule "llm_fns"]
+	path = llm_fns
+	url = https://github.com/kir-gadjello/llm_fns.git
