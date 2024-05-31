@@ -1,6 +1,7 @@
 # Picoagent-RnD
 
 Web &amp; CLI capable LLM agent (very early research prototype)
+
 Note: Once the code stabilizes, the "-RnD" suffix will be removed.
 
 # Motivation
@@ -52,10 +53,10 @@ Currently you can start working with the project by creating a python virtual en
 `pip install -r requirements.txt'`
 
 CLI chat-style invocations of the current basic agent demo:
-`python main.py -v "browse HN and tell me the most salient AI/LLM stories of today"`
-`python main.py -v "find a ready to use github repo implementing suffix trees in python"`
-`python main.py -v "write and run a basic python http api with helloworld endpoint"`
-`python main.py -v "help me answer questions about my obsidian vault located at <...>"`
+* `python main.py -v "browse HN and tell me the most salient AI/LLM stories of today"`
+* `python main.py -v "find a ready to use github repo implementing suffix trees in python"`
+* `python main.py -v "write and run a basic python http api with helloworld endpoint"`
+* `python main.py -v "help me answer questions about my obsidian vault located at <...>"`
 
 # Source code licensing, etc
 
@@ -68,27 +69,27 @@ I plan to rewrite the useful part of said functions once it becomes apparent tha
 A necessarily incomplete and in-flux list of projects that influenced me:
 
 ## Projects
-[MemGPT](https://github.com/cpacker/MemGPT)
-[OpenDevin](https://github.com/OpenDevin/OpenDevin)
-[Aider](https://github.com/paul-gauthier/aider)
-[read_agent_demo](https://github.com/read-agent/read-agent.github.io/blob/main/assets/read_agent_demo.ipynb)
-[WebLlama/WebLINX](https://github.com/McGill-NLP/webllama)
-[Functionary](https://github.com/MeetKai/functionary)
-[OpenCodeInterpreter](https://github.com/OpenCodeInterpreter/OpenCodeInterpreter)
+* [MemGPT](https://github.com/cpacker/MemGPT)
+* [OpenDevin](https://github.com/OpenDevin/OpenDevin) 
+* [Aider](https://github.com/paul-gauthier/aider) 
+* [read_agent_demo](https://github.com/read-agent/read-agent.github.io/blob/main/assets/read_agent_demo.ipynb) 
+* [WebLlama/WebLINX](https://github.com/McGill-NLP/webllama) 
+* [Functionary](https://github.com/MeetKai/functionary) 
+* [OpenCodeInterpreter](https://github.com/OpenCodeInterpreter/OpenCodeInterpreter) 
 
 ## Research
-[LLM Powered Autonomous Agents](https://lilianweng.github.io/posts/2023-06-23-agent/)
-[A Human-Inspired Reading Agent with Gist Memory of Very Long Contexts](https://arxiv.org/abs/2402.09727)
-[WebGPT: Browser-assisted question-answering with human feedback](https://arxiv.org/abs/2112.09332)
-[MemGPT](https://arxiv.org/abs/2310.08560)
-[Language Agent Tree Search Unifies Reasoning Acting and Planning in Language Models](https://arxiv.org/abs/2310.04406)
-[Tree of Thoughts: Deliberate Problem Solving with Large Language Models](https://arxiv.org/abs/2305.10601)
-[Reflexion: Language Agents with Verbal Reinforcement Learning](https://arxiv.org/abs/2303.11366)
-[WebLINX: Real-World Website Navigation with Multi-Turn Dialogue](https://arxiv.org/abs/2402.05930)
-[SWE-bench: Can Language Models Resolve Real-World GitHub Issues?](https://arxiv.org/abs/2310.06770)
-[OpenCodeInterpreter: Integrating Code Generation with Execution and Refinement](https://arxiv.org/abs/2402.14658)
-[Towards General Computer Control: A Multimodal Agent for Red Dead Redemption II as a Case Study](https://arxiv.org/abs/2403.03186)
-[ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629)
-[Agent-FLAN](https://arxiv.org/abs/2403.12881)
-[In-context Reinforcement Learning with Algorithm Distillation](https://arxiv.org/abs/2210.14215)
+* [LLM Powered Autonomous Agents](https://lilianweng.github.io/posts/2023-06-23-agent/)
+* [A Human-Inspired Reading Agent with Gist Memory of Very Long Contexts](https://arxiv.org/abs/2402.09727)
+* [WebGPT: Browser-assisted question-answering with human feedback](https://arxiv.org/abs/2112.09332)
+* [MemGPT](https://arxiv.org/abs/2310.08560)
+* [Language Agent Tree Search Unifies Reasoning Acting and Planning in Language Models](https://arxiv.org/abs/2310.04406)
+* [Tree of Thoughts: Deliberate Problem Solving with Large Language Models](https://arxiv.org/abs/2305.10601)
+* [Reflexion: Language Agents with Verbal Reinforcement Learning](https://arxiv.org/abs/2303.11366)
+* [WebLINX: Real-World Website Navigation with Multi-Turn Dialogue](https://arxiv.org/abs/2402.05930)
+* [SWE-bench: Can Language Models Resolve Real-World GitHub Issues?](https://arxiv.org/abs/2310.06770)
+* [OpenCodeInterpreter: Integrating Code Generation with Execution and Refinement](https://arxiv.org/abs/2402.14658)
+* [Towards General Computer Control: A Multimodal Agent for Red Dead Redemption II as a Case Study](https://arxiv.org/abs/2403.03186)
+* [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629)
+* [Agent-FLAN](https://arxiv.org/abs/2403.12881)
+* [In-context Reinforcement Learning with Algorithm Distillation](https://arxiv.org/abs/2210.14215)
 
