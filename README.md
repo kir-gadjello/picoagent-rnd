@@ -1,6 +1,6 @@
 # Picoagent-RnD
 
-Web &amp; CLI capable LLM agent (very early research prototype)
+Web &amp; CLI capable LLM agent (very early research prototype). Fresh implementation that does not rely on and isn't constrained by legacy frameworks.
 
 Note: Once the code stabilizes, the "-RnD" suffix will be removed.
 
@@ -37,6 +37,10 @@ The aim of this project is to explore the solution space of a "second generation
 
 # Current state and recommendations
 
+## Architecture
+
+The current agent demo uses a ReAct-like interaction template with inner monologue and JSON grammar to implement function calling. Available tools are defined in `tool_defs.py` and get automatically converted into LLM prompt specifications and JSON schemas for the llama.cpp grammar engine. Even in this very simple configuration the agent is capable of chaining diverse behaviors, as examples show.
+
 ## LLM requirements
 Use of a self-hosted or OpenAI-like API (GROQ, Together) with a recently released strong chat LLM is recommended. Main LLMs I use developing this project are [8B](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct) and [70B](https://huggingface.co/meta-llama/Meta-Llama-3-70B-Instruct) variants of Meta's Llama-3-Instruct via local llama.cpp.
 
@@ -44,13 +48,13 @@ Currently, the 0-shot function calling framework heavily relies on JSON grammar 
 
 I aim to make all Stage 0 and as much of Stage 1 project features as possible supported with Llama-3-70B-Instruct (even quantized to fit in a single 24GiB GPU), with the rest of the features requiring no more than a special finetune of the same 70B model.
 
-## Architecture
+## Install
+Currently you can start working with the project by cloning this git repo and creating a python virtual environment (venv, pyenv, conda) and installing the dependencies (soon: running inside docker environment):
+`pip install -r requirements.txt'`
 
-The current agent demo uses a ReAct-like interaction template with inner monologue and JSON grammar to implement function calling. Available tools are defined in `tool_defs.py` and get automatically converted into LLM prompt specifications and JSON schemas for the llama.cpp grammar engine. Even in this very simple configuration the agent is capable of chaining diverse behaviors, as examples show.
+Make sure you have valid `OPENAI_API_BASE` and `OPENAI_API_KEY` environment variables pointing to a working LLM backend. For now the recommended inference engine is [llama.cpp](https://github.com/ggerganov/llama.cpp) and the tested LLM checkpoint is [Meta-Llama-3-70B-Instruct-IQ2_XS.gguf](https://huggingface.co/lmstudio-community/Meta-Llama-3-70B-Instruct-BPE-fix-GGUF/blob/main/Meta-Llama-3-70B-Instruct-IQ2_XS.gguf).
 
 ## Examples
-Currently you can start working with the project by creating a python virtual environment (venv, pyenv, conda) and installing the dependencies (soon: running inside docker environment):
-`pip install -r requirements.txt'`
 
 CLI chat-style invocations of the current basic agent demo:
 * `python main.py -v "browse HN and tell me the most salient AI/LLM stories of today"`
