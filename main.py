@@ -1,8 +1,12 @@
+import os
+import yaml
+from pathlib import Path
 import argparse
 import json
 import inspect
 import demjson3 as demjson
 import jsonschema
+import re
 
 from llm_fns.llm import llm_chat
 from tools import available_tools, json_to_highlighted_str
@@ -16,6 +20,70 @@ from util import enable_debug, printd
 # c = gbnfc.GBNFCompiler(template, { 'tool': tools, 'reason': SingleSentence() })
 # print(c.grammar())
 
+def load_config():
+    """Load config from yaml files in standard locations"""
+    config_paths = [
+        'picoagent.yaml',
+        os.path.expanduser('~/.picoagent.yaml'),
+        os.path.expanduser('~/.config/picoagent.yaml')
+    ]
+    
+    for path in config_paths:
+        try:
+            with open(path) as f:
+                config = yaml.safe_load(f)
+                if config and isinstance(config, dict):
+                    return config
+        except Exception as _:
+            continue
+            
+    return {}
+
+def parse_llm_json(llm_response: str):
+    """
+    Parse JSON from LLM response, handling code blocks and various formats.
+    
+    Args:
+        llm_response (str): Raw LLM response text
+        
+    Returns:
+        dict: Parsed JSON object or fallback dictionary with error info
+        
+    Example:
+        >>> parse_llm_json('```json\n{"key": "value"}\n```')
+        {'key': 'value'}
+    """
+    # Strip whitespace
+    text = llm_response.strip()
+    
+    # Extract from code block if present
+    code_block_match = re.search(r'```(?:json)?\n(.*?)\n```', text, re.DOTALL)
+    if code_block_match:
+        text = code_block_match.group(1).strip()
+    
+    # Try multiple parsing approaches
+    parsers = [
+        # Standard JSON parser
+        lambda t: json.loads(t),
+        # More permissive JSON parser
+        lambda t: demjson.decode(t),
+        # Find first JSON-like structure
+        lambda t: json.loads(re.search(r'\{.*\}', t, re.DOTALL).group(0))
+    ]
+    
+    for parser in parsers:
+        try:
+            return parser(text)
+        except Exception:
+            continue
+            
+    # Fallback with error handling
+    return {
+        "error": "Failed to parse JSON",
+        "raw_text": text,
+        "source_file_summary": text,
+        "contains_malicious_elements": "contains_malicious_elements: t" in text.lower()
+    }
 
 def toolset(*args, exclude=[]):
     ret = []
@@ -48,7 +116,7 @@ def construct_json_schema(
     tools,
     title="ai_response",
     tool_name_field="call_tool",
-    args_name="arguments",
+    args_name="params",
     thoughts_required=False,
     thoughts_field="thoughts",
 ):
@@ -281,39 +349,6 @@ def format_tool_output_pseudoxmljson(
 def format_user_input_pseudoxml(s):
     return "<user-input>s</user-output>"
 
-
-def attempt_to_extract_json(s):
-    """
-    Attempts to extract a valid JSON object from a string, trimming garbage characters
-    and handling slight misspecs or missing/unpaired quotes.
-    """
-    # Trim leading and trailing garbage characters
-    s = s.strip()
-
-    # Extract the JSON object (if present) by finding the first '{' and last '}'
-    start_idx = s.find("{")
-    end_idx = s.rfind("}")
-    if start_idx != -1 and end_idx != -1:
-        json_str = s[start_idx : end_idx + 1]
-
-        # Try to parse the JSON string using demjson (more robust than json module)
-        try:
-            obj = demjson.decode(json_str)
-            return obj
-        except ValueError:
-            pass
-
-        # If demjson fails, try to parse using the standard json module
-        try:
-            obj = json.loads(json_str)
-            return obj
-        except ValueError:
-            pass
-
-    # If all else fails, return None
-    return None
-
-
 def validate_json(json_obj, schema):
     try:
         jsonschema.validate(instance=json_obj, schema=schema)
@@ -343,7 +378,11 @@ class LLMAgent:
         avoid_json_for_str_ret=True,
         function_calling_mode=None,
         max_n_retries=5,  # useful for backends that do not support proper json schema
+        llm_api_kwargs={},
+        tool_arg_field_name="params"
     ):
+        self.tool_arg_field_name = tool_arg_field_name
+        self.llm_api_kwargs = llm_api_kwargs
         self.user_input_formatter = user_input_formatter
         self.tool_output_formatter = tool_output_formatter
         self.avoid_json_for_str_ret = avoid_json_for_str_ret
@@ -374,18 +413,19 @@ class LLMAgent:
             print(f"Executing user query: {first_user_msg}")
             self.update(first_user_msg)
 
-    def llm_call_fc(self, msgs):
-        llm_api_kwargs = {}
+    def llm_call_fc(self, msgs, llm_api_kwargs={}):
+
+        _llm_api_kwargs = {**self.llm_api_kwargs, **llm_api_kwargs}
 
         if self.function_calling_mode == "json_schema":
-            llm_api_kwargs = dict(json_schema=self.json_schema)
+            _llm_api_kwargs['json_schema'] = self.json_schema
         elif self.function_calling_mode == "json_format":
-            llm_api_kwargs = dict(response_format={"type": "json_object"})
+            _llm_api_kwargs['response_format'] = {"type": "json_object"}
 
         n = 0
         while n < self.max_n_retries:
-            ret = llm_chat(msgs, **llm_api_kwargs)
-            json = attempt_to_extract_json(ret)
+            ret = llm_chat(msgs, **_llm_api_kwargs)
+            json = parse_llm_json(ret)
             if json is not None and validate_json(json, self.json_schema):
                 return json
             n += 1
@@ -403,10 +443,10 @@ class LLMAgent:
             self.msgs.append(ai_msg(json.dumps(json_fc_obj)))
 
             tool_name = json_fc_obj["call_tool"]
-            tool_args = json_fc_obj["arguments"]
+            tool_args = json_fc_obj[self.tool_arg_field_name]
 
             if msg_printer and tool_name == "send_message":
-                msg_printer(json_fc_obj["arguments"]["message"])
+                msg_printer(json_fc_obj[self.tool_arg_field_name]["message"])
                 return json_fc_obj
 
             printd("LLM_RAW_OUT:", json_to_highlighted_str(json_fc_obj))
@@ -494,6 +534,9 @@ def main():
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable debug mode"
     )
+    parser.add_argument("-b", "--api-base", help="API base URL")
+    parser.add_argument("-k", "--api-key", help="API key")
+    parser.add_argument("-m", "--api-model", help="API LLM model")
 
     args = parser.parse_args()
 
@@ -504,6 +547,26 @@ def main():
         for tool_name, tool in available_tools.items():
             print(tool_name, json_to_highlighted_str(tool["json_schema"]))
         return
+
+    # Load config and extract api params
+    config = load_config()
+    llm_api_kwargs = {}
+
+    # Command line args override config file
+    if args.api_base:
+        llm_api_kwargs['api_base'] = args.api_base
+    elif config.get('api_base'):
+        llm_api_kwargs['api_base'] = config['api_base']
+
+    if args.api_key: 
+        llm_api_kwargs['api_key'] = args.api_key
+    elif config.get('api_key'):
+        llm_api_kwargs['api_key'] = config['api_key']
+        
+    if args.api_model:
+        llm_api_kwargs['model'] = args.api_model
+    elif config.get('api_model'):
+        llm_api_kwargs['model'] = config['api_model']
 
     agent = LLMAgent(
         prompt=prompt_tooluse_ultramin_thoughts_system_criticism,  # prompt_tooluse_ultramin,
@@ -517,6 +580,7 @@ def main():
         ),
         first_user_msg=args.query if len(args.query) else None,
         function_calling_mode=args.fc_mode,
+        llm_api_kwargs=llm_api_kwargs
     )
 
     while True:

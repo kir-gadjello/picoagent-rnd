@@ -1,0 +1,4 @@
+api_base: "https://openrouter.ai/api/v1"        # LLM API endpoint
+api_key: "sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxx"  # API key if required
+api_model: "deepseek/deepseek-chat"             # Model identifier
+

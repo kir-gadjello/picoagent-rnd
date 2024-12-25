@@ -52,9 +52,29 @@ I aim to make all Stage 0 and as much of Stage 1 project features as possible su
 Currently you can start working with the project by cloning this git repo and creating a python virtual environment (venv, pyenv, conda) and installing the dependencies (soon: running inside docker environment):
 `pip install -r requirements.txt'`
 
-Make sure you have valid `OPENAI_API_BASE` and `OPENAI_API_KEY` environment variables pointing to a working LLM backend. For now the recommended inference engine is [llama.cpp](https://github.com/ggerganov/llama.cpp) and the tested LLM checkpoint is [Meta-Llama-3-70B-Instruct-IQ2_XS.gguf](https://huggingface.co/lmstudio-community/Meta-Llama-3-70B-Instruct-BPE-fix-GGUF/blob/main/Meta-Llama-3-70B-Instruct-IQ2_XS.gguf).
+### Configuration
+The agent can be configured via environment variables, command line arguments or a YAML configuration file. The configuration file will be looked for in the following locations (in order):
+
+1. `picoagent.yaml` in the current directory
+2. `~/.picoagent.yaml` in user's home directory
+3. `~/.config/picoagent.yaml` in user's config directory
+
+Example configuration file for [Openrouter](https://openrouter.ai) :
+```yaml
+api_base: "https://openrouter.ai/api/v1"        # LLM API endpoint
+api_key: "sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxx"  # API key if required
+api_model: "deepseek/deepseek-chat"             # Model identifier
+```
+
+Command line arguments will override any values from the config file.
+
+Make sure you have valid `OPENAI_API_BASE` and `OPENAI_API_KEY` environment variables pointing to a working LLM backend, if not using a config file. For now the recommended inference engine is [llama.cpp](https://github.com/ggerganov/llama.cpp) and the tested LLM checkpoint is [Meta-Llama-3-70B-Instruct-IQ2_XS.gguf](https://huggingface.co/lmstudio-community/Meta-Llama-3-70B-Instruct-BPE-fix-GGUF/blob/main/Meta-Llama-3-70B-Instruct-IQ2_XS.gguf).
+
 
 ## Examples
+
+Using openrouter with deepseek-2.5 LLM:
+
 
 CLI chat-style invocations of the current basic agent demo:
 * `python main.py -v "browse HN and tell me the most salient AI/LLM stories of today"`
