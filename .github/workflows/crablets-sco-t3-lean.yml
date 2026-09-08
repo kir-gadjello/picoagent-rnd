@@ -1,0 +1,24 @@
+name: CRABLETS SCO T3 Lean
+
+on:
+  push:
+    branches: ["crablets-sco-t3-proof-centric"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and audit SCO T3 formal core
+        uses: leanprover/lean-action@v1
+        env:
+          LEAN_NUM_THREADS: "1"
+        with:
+          lake-package-directory: research/crablets_sco_t3/formal
+          build: "true"
+          use-mathlib-cache: "true"
+          axiom-audit: "true"
+          axiom-audit-root: "ScoT3"
+          nanoda: "true"
+          nanoda-allow-sorry: "false"
