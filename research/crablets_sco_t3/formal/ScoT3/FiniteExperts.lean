@@ -72,8 +72,7 @@ noncomputable def uniformLikelihoodMixture {ι : Type*} [Fintype ι]
 
 /-- A uniform finite mixture pays at most `log N` extra nats relative to any
 single positive expert likelihood. This is the proof-centric reason to use
-Bayesian/log-loss routing for the bit delay experts: the information-theoretic
-oracle and the learning rule share an exact codelength contract. -/
+Bayesian/log-loss routing for finite delay experts. -/
 theorem uniformLikelihoodMixture_codelength_le {ι : Type*} [Fintype ι]
     (likelihood : ι → ℝ) (j : ι)
     (hpos : ∀ i, 0 < likelihood i)
@@ -96,13 +95,55 @@ theorem uniformLikelihoodMixture_codelength_le {ι : Type*} [Fintype ι]
   linarith
 
 /-- Bayesian multiplicative updating has the exact total-mass identity behind
-prequential mixture coding. It is deliberately stated without probability
-normalization assumptions so it composes with any positive local expert bank. -/
+prequential mixture coding. -/
 theorem bayes_total_mass_step {ι : Type*} [Fintype ι]
     (weight obsProb : ι → ℝ) (hW : (∑ i, weight i) ≠ 0) :
     (∑ i, weight i * obsProb i) =
       ((∑ i, weight i * obsProb i) / (∑ i, weight i)) * (∑ i, weight i) := by
   field_simp
+
+/-- General prior-weighted likelihood mixture. Hidden-state paths of a finite
+fixed-share router are just another finite expert class under this definition. -/
+noncomputable def weightedLikelihoodMixture {ι : Type*} [Fintype ι]
+    (prior likelihood : ι → ℝ) : ℝ :=
+  ∑ i, prior i * likelihood i
+
+/-- Any positive path/expert in a finite prior-weighted mixture gives a direct
+codelength upper bound: mixture code length is at most that expert's code length
+plus the negative log prior of the path. This is the formal tracking contract
+needed by a fixed-share HMM router once its transition prior is instantiated. -/
+theorem weightedLikelihoodMixture_codelength_le {ι : Type*} [Fintype ι]
+    (prior likelihood : ι → ℝ) (j : ι)
+    (hprior : ∀ i, 0 ≤ prior i)
+    (hpriorj : 0 < prior j)
+    (hlike : ∀ i, 0 < likelihood i) :
+    -Real.log (weightedLikelihoodMixture prior likelihood) ≤
+      -Real.log (likelihood j) - Real.log (prior j) := by
+  have htermpos : 0 < prior j * likelihood j := mul_pos hpriorj (hlike j)
+  have hsum : prior j * likelihood j ≤ weightedLikelihoodMixture prior likelihood := by
+    exact Finset.single_le_sum
+      (fun i _ => mul_nonneg (hprior i) (le_of_lt (hlike i))) (Finset.mem_univ j)
+  have hmixpos : 0 < weightedLikelihoodMixture prior likelihood := lt_of_lt_of_le htermpos hsum
+  have hlog : Real.log (prior j * likelihood j) ≤
+      Real.log (weightedLikelihoodMixture prior likelihood) :=
+    (Real.log_le_log htermpos hmixpos).2 hsum
+  rw [Real.log_mul (ne_of_gt hpriorj) (ne_of_gt (hlike j))] at hlog
+  linarith
+
+/-- One coordinate of the fixed-share transition. `share/card` is explicit
+probability mass reserved for recovery from a stale routing hypothesis. -/
+def fixedShareMass (share card p : ℝ) : ℝ := (1-share)*p + share/card
+
+/-- With a legal share and nonnegative incoming mass, every coordinate receives
+at least the uniform share floor. This is the local reason a new lag can recover
+after a nonstationary switch instead of having vanishing posterior support. -/
+theorem fixedShareMass_floor (share card p : ℝ)
+    (hs0 : 0 ≤ share) (hs1 : share ≤ 1) (hc : 0 < card) (hp : 0 ≤ p) :
+    share/card ≤ fixedShareMass share card p := by
+  have h1s : 0 ≤ 1-share := sub_nonneg.mpr hs1
+  have hprod : 0 ≤ (1-share)*p := mul_nonneg h1s hp
+  simp [fixedShareMass]
+  linarith
 
 #print axioms ktReliability_mem_openUnit
 #print axioms calibratedBitProb_bounds
@@ -111,5 +152,7 @@ theorem bayes_total_mass_step {ι : Type*} [Fintype ι]
 #print axioms exact_recall_card_le
 #print axioms uniformLikelihoodMixture_codelength_le
 #print axioms bayes_total_mass_step
+#print axioms weightedLikelihoodMixture_codelength_le
+#print axioms fixedShareMass_floor
 
 end ScoT3
