@@ -5,8 +5,10 @@ namespace ScoT3
 
 /-- Projection used by a learned scalar gate. Keeping the admissible gate in
 `[0,1]` makes composition remain a convex mixture and therefore preserves the
-local boundedness contract proved in `Core`. -/
-def clip01 (x : ℝ) : ℝ :=
+local boundedness contract proved in `Core`. This real-valued mathematical model
+is intentionally noncomputable; executable floating-point refinement is a
+separate implementation theorem. -/
+noncomputable def clip01 (x : ℝ) : ℝ :=
   if x < 0 then 0 else if 1 < x then 1 else x
 
 /-- Projection is always a legal convex-mixture coefficient. -/
@@ -39,7 +41,7 @@ theorem clip01_sq_dist_le (x u : ℝ) (hu0 : 0 ≤ u) (hu1 : u ≤ 1) :
       simp [clip01, h0, h1]
 
 /-- One local projected-gradient step for a scalar routing gate. -/
-def projectedGateStep (η g a : ℝ) : ℝ := clip01 (ogdStep η g a)
+noncomputable def projectedGateStep (η g a : ℝ) : ℝ := clip01 (ogdStep η g a)
 
 /-- Projected local learning inherits the usual OGD potential upper bound. -/
 theorem projectedGate_potential_le (η g a u : ℝ)
