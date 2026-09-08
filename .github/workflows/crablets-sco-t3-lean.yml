@@ -10,13 +10,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Lean bootstrap
+        uses: leanprover/lean-action@v1
+        env:
+          LEAN_NUM_THREADS: "1"
+        with:
+          lake-package-directory: research/crablets_sco_t3/formal
+          auto-config: "false"
+          build: "false"
+          test: "false"
+          lint: "false"
+          use-mathlib-cache: "false"
+      - name: Resolve Lake dependencies
+        working-directory: research/crablets_sco_t3/formal
+        run: lake update
       - name: Build and audit SCO T3 formal core
         uses: leanprover/lean-action@v1
         env:
           LEAN_NUM_THREADS: "1"
         with:
           lake-package-directory: research/crablets_sco_t3/formal
+          auto-config: "false"
           build: "true"
+          test: "false"
+          lint: "false"
           use-mathlib-cache: "true"
           axiom-audit: "true"
           axiom-audit-root: "ScoT3"
