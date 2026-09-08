@@ -10,7 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Lean bootstrap
+      - name: Install elan
+        run: |
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Resolve and build formal package
+        working-directory: research/crablets_sco_t3/formal
+        env:
+          LEAN_NUM_THREADS: "1"
+        run: |
+          lake update
+          lake exe cache get
+          lake build
+      - name: Independent kernel-environment audits
         uses: leanprover/lean-action@v1
         env:
           LEAN_NUM_THREADS: "1"
@@ -21,20 +33,6 @@ jobs:
           test: "false"
           lint: "false"
           use-mathlib-cache: "false"
-      - name: Resolve Lake dependencies
-        working-directory: research/crablets_sco_t3/formal
-        run: lake update
-      - name: Build and audit SCO T3 formal core
-        uses: leanprover/lean-action@v1
-        env:
-          LEAN_NUM_THREADS: "1"
-        with:
-          lake-package-directory: research/crablets_sco_t3/formal
-          auto-config: "false"
-          build: "true"
-          test: "false"
-          lint: "false"
-          use-mathlib-cache: "true"
           axiom-audit: "true"
           axiom-audit-root: "ScoT3"
           nanoda: "true"
