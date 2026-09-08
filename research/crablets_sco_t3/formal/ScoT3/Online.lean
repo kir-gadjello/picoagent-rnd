@@ -54,21 +54,20 @@ theorem ogd_regret_telescope
     (loss grad : ℕ → ℝ → ℝ)
     (hfirst : ∀ t w u, loss t w - loss t u ≤ grad t w * (w-u))
     (w₀ u : ℝ) : ∀ T,
-    let w := ogdSeq η grad w₀
-    2*η*(∑ t ∈ Finset.range T, (loss t (w t) - loss t u)) ≤
-      (w₀-u)^2 - (w T-u)^2 +
-        η^2*(∑ t ∈ Finset.range T, (grad t (w t))^2) := by
+    2*η*(∑ t ∈ Finset.range T, (loss t (ogdSeq η grad w₀ t) - loss t u)) ≤
+      (w₀-u)^2 - (ogdSeq η grad w₀ T-u)^2 +
+        η^2*(∑ t ∈ Finset.range T, (grad t (ogdSeq η grad w₀ t))^2) := by
   intro T
   induction T with
-  | zero => simp
+  | zero => simp [ogdSeq]
   | succ T ih =>
-      let w := ogdSeq η grad w₀
-      have hstep := ogd_one_step_regret η (grad T (w T)) (w T) u
-        (loss T (w T) - loss T u) hη (hfirst T (w T) u)
-      change 2*η*(∑ t ∈ Finset.range (T+1), (loss t (w t) - loss t u)) ≤ _
-      simp only [Finset.sum_range_succ]
-      have hw : w (T+1) = ogdStep η (grad T (w T)) (w T) := rfl
-      rw [hw]
+      have hstep := ogd_one_step_regret η
+        (grad T (ogdSeq η grad w₀ T))
+        (ogdSeq η grad w₀ T) u
+        (loss T (ogdSeq η grad w₀ T) - loss T u)
+        hη (hfirst T (ogdSeq η grad w₀ T) u)
+      rw [Finset.sum_range_succ, Finset.sum_range_succ]
+      simp only [ogdSeq]
       nlinarith
 
 /-- Dropping the nonnegative final potential yields the conventional regret upper
@@ -78,11 +77,9 @@ theorem ogd_regret_bound
     (loss grad : ℕ → ℝ → ℝ)
     (hfirst : ∀ t w u, loss t w - loss t u ≤ grad t w * (w-u))
     (w₀ u : ℝ) (T : ℕ) :
-    let w := ogdSeq η grad w₀
-    2*η*(∑ t ∈ Finset.range T, (loss t (w t) - loss t u)) ≤
-      (w₀-u)^2 + η^2*(∑ t ∈ Finset.range T, (grad t (w t))^2) := by
+    2*η*(∑ t ∈ Finset.range T, (loss t (ogdSeq η grad w₀ t) - loss t u)) ≤
+      (w₀-u)^2 + η^2*(∑ t ∈ Finset.range T, (grad t (ogdSeq η grad w₀ t))^2) := by
   have h := ogd_regret_telescope η hη loss grad hfirst w₀ u T
-  dsimp at h ⊢
   nlinarith [sq_nonneg (ogdSeq η grad w₀ T-u)]
 
 #print axioms sqLoss_firstOrder
