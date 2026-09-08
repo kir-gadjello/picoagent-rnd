@@ -21,7 +21,7 @@ def choose {X : Type*} {E : X → ℝ} (gate : X → Bool)
   step := fun x => if gate x then a.step x else b.step x
   noninc := by
     intro x
-    cases h : gate x <;> simp [h, a.noninc, b.noninc]
+    cases h : gate x <;> simp [a.noninc, b.noninc]
 
 end Passive
 
@@ -70,7 +70,7 @@ theorem mix_abs_le (a x y B : ℝ)
   have h1a : 0 ≤ 1-a := sub_nonneg.mpr ha1
   calc
     |mix a x y| ≤ |(1-a)*x| + |a*y| := by
-      simpa [mix] using abs_add ((1-a)*x) (a*y)
+      simpa [mix] using abs_add_le ((1-a)*x) (a*y)
     _ = (1-a)*|x| + a*|y| := by
       rw [abs_mul, abs_mul, abs_of_nonneg h1a, abs_of_nonneg ha0]
     _ ≤ (1-a)*B + a*B := by
