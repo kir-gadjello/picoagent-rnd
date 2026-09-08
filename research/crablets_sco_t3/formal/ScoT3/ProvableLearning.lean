@@ -83,9 +83,59 @@ theorem projectedGate_one_step_regret
     exact mul_le_mul_of_nonneg_left hfo (mul_nonneg (by norm_num) hη)
   nlinarith
 
+/-- Online sequence for a single local two-child mixture gate. Child predictions
+and targets may vary adversarially with time. The update differentiates only the
+current scalar mixture coefficient, never a child state or earlier timestep. -/
+noncomputable def projectedGateSeq
+    (η : ℝ) (p q y : ℕ → ℝ) (a₀ : ℝ) : ℕ → ℝ
+  | 0 => a₀
+  | n + 1 =>
+      projectedGateStep η
+        (mixSqGrad (p n) (q n) (y n) (projectedGateSeq η p q y a₀ n))
+        (projectedGateSeq η p q y a₀ n)
+
+/-- Deterministic finite-horizon regret telescope for the actual local projected
+mixture-gate update. This is the compositional learning contract used at lattice
+routing seams: each gate competes with any fixed legal local mixture coefficient. -/
+theorem projectedGate_regret_telescope
+    (η : ℝ) (hη : 0 ≤ η)
+    (p q y : ℕ → ℝ) (a₀ u : ℝ)
+    (hu0 : 0 ≤ u) (hu1 : u ≤ 1) : ∀ T,
+    2*η*(∑ t ∈ Finset.range T,
+      (mixSqLoss (p t) (q t) (y t) (projectedGateSeq η p q y a₀ t) -
+       mixSqLoss (p t) (q t) (y t) u)) ≤
+      (a₀-u)^2 - (projectedGateSeq η p q y a₀ T-u)^2 +
+      η^2*(∑ t ∈ Finset.range T,
+        (mixSqGrad (p t) (q t) (y t) (projectedGateSeq η p q y a₀ t))^2) := by
+  intro T
+  induction T with
+  | zero => simp [projectedGateSeq]
+  | succ T ih =>
+      have hstep := projectedGate_one_step_regret η (p T) (q T) (y T)
+        (projectedGateSeq η p q y a₀ T) u hη hu0 hu1
+      rw [Finset.sum_range_succ, Finset.sum_range_succ]
+      simp only [projectedGateSeq]
+      nlinarith
+
+/-- The conventional regret upper bound obtained by dropping the final
+nonnegative potential. -/
+theorem projectedGate_regret_bound
+    (η : ℝ) (hη : 0 ≤ η)
+    (p q y : ℕ → ℝ) (a₀ u : ℝ)
+    (hu0 : 0 ≤ u) (hu1 : u ≤ 1) (T : ℕ) :
+    2*η*(∑ t ∈ Finset.range T,
+      (mixSqLoss (p t) (q t) (y t) (projectedGateSeq η p q y a₀ t) -
+       mixSqLoss (p t) (q t) (y t) u)) ≤
+      (a₀-u)^2 + η^2*(∑ t ∈ Finset.range T,
+        (mixSqGrad (p t) (q t) (y t) (projectedGateSeq η p q y a₀ t))^2) := by
+  have h := projectedGate_regret_telescope η hη p q y a₀ u hu0 hu1 T
+  nlinarith [sq_nonneg (projectedGateSeq η p q y a₀ T-u)]
+
 #print axioms clip01_sq_dist_le
 #print axioms projectedGate_potential_le
 #print axioms mixSqLoss_firstOrder
 #print axioms projectedGate_one_step_regret
+#print axioms projectedGate_regret_telescope
+#print axioms projectedGate_regret_bound
 
 end ScoT3
