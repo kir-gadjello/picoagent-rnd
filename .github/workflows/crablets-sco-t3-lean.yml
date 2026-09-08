@@ -3,6 +3,9 @@ name: CRABLETS SCO T3 Lean
 on:
   push:
     branches: ["crablets-sco-t3-proof-centric"]
+    paths:
+      - "research/crablets_sco_t3/formal/**"
+      - ".github/workflows/crablets-sco-t3-lean.yml"
   workflow_dispatch:
 
 jobs:
@@ -33,6 +36,7 @@ jobs:
           test: "false"
           lint: "false"
           use-mathlib-cache: "false"
+          use-github-cache: "false"
           axiom-audit: "true"
           axiom-audit-root: "ScoT3"
           nanoda: "true"
