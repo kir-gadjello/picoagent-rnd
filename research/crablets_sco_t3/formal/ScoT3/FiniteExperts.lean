@@ -65,10 +65,51 @@ theorem exact_recall_card_le {Message State : Type*}
     Fintype.card Message ≤ Fintype.card State := by
   exact Fintype.card_le_of_injective encode (exact_recall_injective encode decode h)
 
+/-- Uniform Bayesian mixture likelihood over a finite expert class. -/
+noncomputable def uniformLikelihoodMixture {ι : Type*} [Fintype ι]
+    (likelihood : ι → ℝ) : ℝ :=
+  (∑ i, likelihood i) / (Fintype.card ι : ℝ)
+
+/-- A uniform finite mixture pays at most `log N` extra nats relative to any
+single positive expert likelihood. This is the proof-centric reason to use
+Bayesian/log-loss routing for the bit delay experts: the information-theoretic
+oracle and the learning rule share an exact codelength contract. -/
+theorem uniformLikelihoodMixture_codelength_le {ι : Type*} [Fintype ι]
+    (likelihood : ι → ℝ) (j : ι)
+    (hpos : ∀ i, 0 < likelihood i)
+    (hcard : 0 < (Fintype.card ι : ℝ)) :
+    -Real.log (uniformLikelihoodMixture likelihood) ≤
+      -Real.log (likelihood j) + Real.log (Fintype.card ι : ℝ) := by
+  have hsum : likelihood j ≤ ∑ i, likelihood i := by
+    exact Finset.single_le_sum (fun i _ => le_of_lt (hpos i)) (Finset.mem_univ j)
+  have hsumpos : 0 < ∑ i, likelihood i := lt_of_lt_of_le (hpos j) hsum
+  have hmixpos : 0 < uniformLikelihoodMixture likelihood := by
+    exact div_pos hsumpos hcard
+  have hjdiv : 0 < likelihood j / (Fintype.card ι : ℝ) := div_pos (hpos j) hcard
+  have hdom : likelihood j / (Fintype.card ι : ℝ) ≤ uniformLikelihoodMixture likelihood := by
+    exact div_le_div_of_nonneg_right hsum (le_of_lt hcard)
+  have hlog :
+      Real.log (likelihood j / (Fintype.card ι : ℝ)) ≤
+        Real.log (uniformLikelihoodMixture likelihood) :=
+    (Real.log_le_log hjdiv hmixpos).2 hdom
+  rw [Real.log_div (ne_of_gt (hpos j)) (ne_of_gt hcard)] at hlog
+  linarith
+
+/-- Bayesian multiplicative updating has the exact total-mass identity behind
+prequential mixture coding. It is deliberately stated without probability
+normalization assumptions so it composes with any positive local expert bank. -/
+theorem bayes_total_mass_step {ι : Type*} [Fintype ι]
+    (weight obsProb : ι → ℝ) (hW : (∑ i, weight i) ≠ 0) :
+    (∑ i, weight i * obsProb i) =
+      ((∑ i, weight i * obsProb i) / (∑ i, weight i)) * (∑ i, weight i) := by
+  field_simp
+
 #print axioms ktReliability_mem_openUnit
 #print axioms calibratedBitProb_bounds
 #print axioms hedgeWeight_pos
 #print axioms finiteExpertMixture_bounds
 #print axioms exact_recall_card_le
+#print axioms uniformLikelihoodMixture_codelength_le
+#print axioms bayes_total_mass_step
 
 end ScoT3
