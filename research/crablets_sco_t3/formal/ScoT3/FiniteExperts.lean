@@ -1,19 +1,20 @@
 import Mathlib
 import ScoT3.Codelength
+import ScoT3.Core
 
 namespace ScoT3
 
 /-- Krichevsky–Trofimov/Beta(1/2,1/2) reliability used to calibrate a
-binary expert from local match/mismatch counts. -/
-def ktReliability (matches mismatches : ℝ) : ℝ :=
-  (matches + (1/2 : ℝ)) / (matches + mismatches + 1)
+binary expert from local correct/incorrect counts. -/
+def ktReliability (correct incorrect : ℝ) : ℝ :=
+  (correct + (1/2 : ℝ)) / (correct + incorrect + 1)
 
 /-- With nonnegative counts the KT reliability is a strict probability. -/
-theorem ktReliability_mem_openUnit (matches mismatches : ℝ)
-    (hm : 0 ≤ matches) (he : 0 ≤ mismatches) :
-    0 < ktReliability matches mismatches ∧ ktReliability matches mismatches < 1 := by
-  have hnum : 0 < matches + (1/2 : ℝ) := by linarith
-  have hden : 0 < matches + mismatches + 1 := by linarith
+theorem ktReliability_mem_openUnit (correct incorrect : ℝ)
+    (hc : 0 ≤ correct) (he : 0 ≤ incorrect) :
+    0 < ktReliability correct incorrect ∧ ktReliability correct incorrect < 1 := by
+  have hnum : 0 < correct + (1/2 : ℝ) := by linarith
+  have hden : 0 < correct + incorrect + 1 := by linarith
   constructor
   · exact div_pos hnum hden
   · apply (div_lt_one hden).2
@@ -71,8 +72,7 @@ noncomputable def uniformLikelihoodMixture {ι : Type*} [Fintype ι]
   (∑ i, likelihood i) / (Fintype.card ι : ℝ)
 
 /-- A uniform finite mixture pays at most `log N` extra nats relative to any
-single positive expert likelihood. This is the proof-centric reason to use
-Bayesian/log-loss routing for finite delay experts. -/
+single positive expert likelihood. -/
 theorem uniformLikelihoodMixture_codelength_le {ι : Type*} [Fintype ι]
     (likelihood : ι → ℝ) (j : ι)
     (hpos : ∀ i, 0 < likelihood i)
@@ -82,15 +82,14 @@ theorem uniformLikelihoodMixture_codelength_le {ι : Type*} [Fintype ι]
   have hsum : likelihood j ≤ ∑ i, likelihood i := by
     exact Finset.single_le_sum (fun i _ => le_of_lt (hpos i)) (Finset.mem_univ j)
   have hsumpos : 0 < ∑ i, likelihood i := lt_of_lt_of_le (hpos j) hsum
-  have hmixpos : 0 < uniformLikelihoodMixture likelihood := by
-    exact div_pos hsumpos hcard
+  have hmixpos : 0 < uniformLikelihoodMixture likelihood := div_pos hsumpos hcard
   have hjdiv : 0 < likelihood j / (Fintype.card ι : ℝ) := div_pos (hpos j) hcard
   have hdom : likelihood j / (Fintype.card ι : ℝ) ≤ uniformLikelihoodMixture likelihood := by
     exact div_le_div_of_nonneg_right hsum (le_of_lt hcard)
   have hlog :
       Real.log (likelihood j / (Fintype.card ι : ℝ)) ≤
         Real.log (uniformLikelihoodMixture likelihood) :=
-    (Real.log_le_log hjdiv hmixpos).2 hdom
+    Real.log_le_log hjdiv hdom
   rw [Real.log_div (ne_of_gt (hpos j)) (ne_of_gt hcard)] at hlog
   linarith
 
@@ -110,8 +109,7 @@ noncomputable def weightedLikelihoodMixture {ι : Type*} [Fintype ι]
 
 /-- Any positive path/expert in a finite prior-weighted mixture gives a direct
 codelength upper bound: mixture code length is at most that expert's code length
-plus the negative log prior of the path. This is the formal tracking contract
-needed by a fixed-share HMM router once its transition prior is instantiated. -/
+plus the negative log prior of the path. -/
 theorem weightedLikelihoodMixture_codelength_le {ι : Type*} [Fintype ι]
     (prior likelihood : ι → ℝ) (j : ι)
     (hprior : ∀ i, 0 ≤ prior i)
@@ -126,19 +124,18 @@ theorem weightedLikelihoodMixture_codelength_le {ι : Type*} [Fintype ι]
   have hmixpos : 0 < weightedLikelihoodMixture prior likelihood := lt_of_lt_of_le htermpos hsum
   have hlog : Real.log (prior j * likelihood j) ≤
       Real.log (weightedLikelihoodMixture prior likelihood) :=
-    (Real.log_le_log htermpos hmixpos).2 hsum
+    Real.log_le_log htermpos hsum
   rw [Real.log_mul (ne_of_gt hpriorj) (ne_of_gt (hlike j))] at hlog
   linarith
 
 /-- One coordinate of the fixed-share transition. `share/card` is explicit
 probability mass reserved for recovery from a stale routing hypothesis. -/
-def fixedShareMass (share card p : ℝ) : ℝ := (1-share)*p + share/card
+noncomputable def fixedShareMass (share card p : ℝ) : ℝ := (1-share)*p + share/card
 
 /-- With a legal share and nonnegative incoming mass, every coordinate receives
-at least the uniform share floor. This is the local reason a new lag can recover
-after a nonstationary switch instead of having vanishing posterior support. -/
+at least the uniform share floor. -/
 theorem fixedShareMass_floor (share card p : ℝ)
-    (hs0 : 0 ≤ share) (hs1 : share ≤ 1) (hc : 0 < card) (hp : 0 ≤ p) :
+    (hs1 : share ≤ 1) (hp : 0 ≤ p) :
     share/card ≤ fixedShareMass share card p := by
   have h1s : 0 ≤ 1-share := sub_nonneg.mpr hs1
   have hprod : 0 ≤ (1-share)*p := mul_nonneg h1s hp
